@@ -1,72 +1,45 @@
-# skip-o-matic
-A hands-free YouTube ad skipper for safer driving and Accessibility needs
+Skip-O-Matic: The Open Source Ad Skipper
 
-Skip-O-Matic is an open-source browser extension built to solve a critical safety and accessibility gap: the requirement for manual interaction to skip advertisements during "eyes-busy" activities like driving or for users with motor impairments.
+A privacy-focused, lightweight extension that automatically clicks the "Skip Ad" button on YouTube and fast-forwards unskippable ads.
 
-🚀 The Mission
+Features
 
-While YouTube provides a "Drive Mode," it still requires users to manually tap the "Skip Ad" button when it appears. For drivers, this creates a dangerous second of distraction. Skip-O-Matic acts as an Accessibility Engine, detecting these UI cues and automating the interaction to keep your hands on the wheel and eyes on the road.
+Auto-Skip: Instantly clicks "Skip Ad" buttons.
 
-✨ Features
+Speed Hack: Detects unskippable ads and speeds them up by 16x (effectively skipping them).
 
-Zero-Interaction Skipping: Automatically detects and clicks "Skip Ad" buttons as soon as they become available.
+Stats: Tracks how many ads you've avoided.
 
-Speed-Fast Engine: Dynamically increases the playback rate of unskippable ad segments to minimize interruption.
+Safe: Runs locally on your browser, no data collection.
 
-Driver-Centric Design: Built with a "set and forget" philosophy.
+Installation (Developer Mode)
 
-Privacy-First Telemetry: Uses anonymous heartbeat pings to track global impact without collecting personal data or browsing history.
+Since this is a hobby project, it is not on the Chrome Web Store. You can install it manually in 1 minute:
 
-🛠️ Technical Implementation
+Download the Code:
 
-MutationObserver API: Monitors the DOM for dynamic changes to ensure high-speed detection of ad overlays.
+Create a folder on your computer named skip-o-matic.
 
-Manifest V3: Built on the latest Chrome extension standards for better security and performance.
+Save manifest.json, content.js, and popup.html inside that folder.
 
-Telemetry: Integrated with Umami Cloud via a privacy-safe pixel heartbeat to track Daily Active Users (DAU) and total skips globally.
+(Optional) Create an icons folder inside and add a 48x48px PNG named icon48.png if you want a pretty icon.
 
-Storage API: Maintains local user statistics to show your personal time saved.
+Load into Chrome/Brave/Edge:
 
-📥 Installation (Developer Mode)
+Open your browser and go to chrome://extensions (or edge://extensions).
 
-As this is currently a hobbyist/research project, it is distributed as an "Unpacked" extension:
+Top right corner: Enable Developer Mode.
 
-Download/Clone this repository to a local folder.
+Top left: Click Load Unpacked.
 
-Open your browser and navigate to chrome://extensions (or edge://extensions).
+Select the skip-o-matic folder you created.
 
-Enable "Developer mode" in the top right corner.
+Test it:
 
-Click "Load unpacked" and select the folder containing the project files.
+Go to YouTube and open a video.
 
-Open YouTube and enjoy a truly hands-free experience.
+Open the extension menu to see your stats!
 
-📊 Impact Tracking
+How it Works
 
-We believe in transparency. This project tracks:
-
-Daily Active Users (DAU): An anonymous heartbeat sent once every 24 hours.
-
-Total Skips: A simple count of successful ad interactions.
-
-Note: We do NOT track IP addresses, YouTube account details, or video history.
-
-⚖️ License
-
-Distributed under the MIT License. See LICENSE for more information.
-
-🤝 Contributing
-
-Contributions are what make the open-source community an amazing place to learn, inspire, and create. Any contributions you make are greatly appreciated.
-
-Fork the Project
-
-Create your Feature Branch (git checkout -b feature/AmazingFeature)
-
-Commit your Changes (git commit -m 'Add some AmazingFeature')
-
-Push to the Branch (git push origin feature/AmazingFeature)
-
-Open a Pull Request
-
-Disclaimer: This project is an independent accessibility tool and is not affiliated with, authorized, maintained, sponsored, or endorsed by YouTube or Google.
+It uses a MutationObserver to watch the YouTube player for the appearance of ad overlays. If it sees a "Skip" button, it clicks it. If it sees an ad video playing without a skip button, it sets the playback speed to 16x to fast-forward through it.

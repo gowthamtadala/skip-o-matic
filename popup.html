@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            width: 250px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1f1f1f;
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+        h2 { margin-top: 0; color: #ff0033; }
+        .stats-box {
+            background: #2a2a2a;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 1px solid #333;
+        }
+        .stats-count {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: #ff0033; }
+        input:checked + .slider:before { transform: translateX(26px); }
+        .footer { font-size: 10px; color: #888; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h2>Skip-O-Matic</h2>
+    
+    <label class="switch">
+        <input type="checkbox" id="toggleSkip" checked>
+        <span class="slider"></span>
+    </label>
+    <p id="statusText">Active</p>
+
+    <div class="stats-box">
+        <div class="stats-count" id="count">0</div>
+        <div>Ads Skipped</div>
+    </div>
+
+    <div class="footer">Open Source Project</div>
+
+    <script>
+        // Popup Logic
+        const toggle = document.getElementById('toggleSkip');
+        const statusText = document.getElementById('statusText');
+        const countDisplay = document.getElementById('count');
+
+        // Load saved state
+        chrome.storage.local.get(['enabled', 'stats'], (result) => {
+            if (result.enabled !== undefined) {
+                toggle.checked = result.enabled;
+                statusText.innerText = result.enabled ? "Active" : "Disabled";
+            }
+            if (result.stats !== undefined) {
+                countDisplay.innerText = result.stats;
+            }
+        });
+
+        // Toggle Event
+        toggle.addEventListener('change', () => {
+            const isEnabled = toggle.checked;
+            statusText.innerText = isEnabled ? "Active" : "Disabled";
+            
+            // Save settings
+            chrome.storage.local.set({ enabled: isEnabled });
+
+            // Notify content script
+            chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+                if(tabs[0]) {
+                    chrome.tabs.sendMessage(tabs[0].id, {action: "toggle", state: isEnabled});
+                }
+            });
+        });
+
+        // Listen for updates from content script to update stats live
+        chrome.storage.onChanged.addListener((changes) => {
+            if (changes.stats) {
+                countDisplay.innerText = changes.stats.newValue;
+            }
+        });
+    </script>
+</body>
+</html>
