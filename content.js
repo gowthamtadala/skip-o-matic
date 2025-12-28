@@ -1,83 +1,51 @@
-// content.js - Enhanced Ad Hunter
+// content.js - Ad Hunter + Daily Active User (DAU) Heartbeat
 
-let autoSkipEnabled = true;
-let totalSkipped = 0;
+// 1. CONFIGURATION
+const UMAMI_PIXEL_URL = "https://cloud.umami.is/p/8Ta4vNN81";
 
-chrome.storage.local.get(['enabled', 'stats'], (result) => {
-    if (result.enabled !== undefined) autoSkipEnabled = result.enabled;
-    if (result.stats !== undefined) totalSkipped = result.stats;
-});
+// 2. DAU HEARTBEAT LOGIC
+// This fires once every 24 hours per user to count them as "Active"
+const sendHeartbeat = () => {
+    const today = new Date().toDateString(); // e.g., "Sat Dec 27 2025"
 
-const observer = new MutationObserver(() => {
-    if (autoSkipEnabled) handleAds();
-});
-
-observer.observe(document.body, {
-    childList: true,
-    subtree: true,
-    attributes: true
-});
-
-function handleAds() {
-    // 1. Check for the "Skip" button (including the one from your XPath area)
-    const skipSelectors = [
-        '.ytp-ad-skip-button',
-        '.ytp-ad-skip-button-modern',
-        '.ytp-ad-skip-button-slot', 
-        'button.ytp-ad-skip-button',
-        '.ytp-ad-overlay-close-button'
-    ];
-
-    for (const selector of skipSelectors) {
-        const button = document.querySelector(selector);
-        if (button && isVisible(button)) {
-            console.log("[Skip-O-Matic] Found skip button via selector.");
-            clickButton(button);
-            return;
+    chrome.storage.local.get(['lastHeartbeat'], (result) => {
+        if (result.lastHeartbeat !== today) {
+            // It's a new day for this user! Send the pixel.
+            const img = new Image();
+            img.src = `${UMAMI_PIXEL_URL}?type=heartbeat&cb=${Date.now()}`;
+            
+            // Save today's date so we don't ping again until tomorrow
+            chrome.storage.local.set({ lastHeartbeat: today });
+            console.log("[Skip-O-Matic] Daily Heartbeat sent to Umami.");
         }
-    }
-
-    // 2. Handle the "Stuck" state or Unskippable Ads
-    const moviePlayer = document.querySelector('#movie_player');
-    const adVideo = document.querySelector('.ad-showing video');
-
-    if (moviePlayer && moviePlayer.classList.contains('ad-showing')) {
-        if (adVideo) {
-            // If the ad is finished or nearly finished but stuck
-            if (adVideo.currentTime >= adVideo.duration - 0.5 || adVideo.ended) {
-                console.log("[Skip-O-Matic] Ad stuck at end. Forcing skip...");
-                // Try to find ANY button inside the ad player container and click it
-                const adContainer = document.querySelector('.ytp-ad-player-overlay');
-                if (adContainer) {
-                    const anyButton = adContainer.querySelector('button');
-                    if (anyButton) anyButton.click();
-                }
-                // Fallback: Just skip to the end of the video element
-                adVideo.currentTime = adVideo.duration;
-            } else {
-                // If it's playing, speed it up
-                adVideo.playbackRate = 16;
-                adVideo.muted = true;
-            }
-        }
-    }
-}
-
-function isVisible(elem) {
-    return !!(elem.offsetWidth || elem.offsetHeight || elem.getClientRects().length);
-}
-
-function clickButton(button) {
-    const events = ['mousedown', 'mouseup', 'click'];
-    events.forEach(eventType => {
-        button.dispatchEvent(new MouseEvent(eventType, {
-            view: window, bubbles: true, cancelable: true
-        }));
     });
-    
-    totalSkipped++;
-    chrome.storage.local.set({ 'stats': totalSkipped });
-}
+};
 
-// Initial run
-handleAds();
+// 3. AD SKIP LOGIC
+const handleAds = () => {
+    const skipButton = document.querySelector('.ytp-ad-skip-button, .ytp-ad-skip-button-modern, .ytp-ad-skip-button-slot');
+
+    if (skipButton && isVisible(skipButton)) {
+        // Click the button
+        skipButton.click();
+        
+        // Track the skip locally for the popup stats
+        chrome.storage.local.get(['stats'], (res) => {
+            chrome.storage.local.set({ stats: (res.stats || 0) + 1 });
+        });
+
+        // OPTIONAL: Send a pixel for every skip too? 
+        // Note: This might hit your Umami free limit faster. 
+        // If you only want to see USERS, the heartbeat above is enough.
+        const skipPing = new Image();
+        skipPing.src = `${UMAMI_PIXEL_URL}?type=skip&cb=${Date.now()}`;
+    }
+};
+
+const isVisible = (el) => !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
+
+// 4. INITIALIZATION
+sendHeartbeat(); // Run once on page load
+setInterval(handleAds, 1000); // Check for ads every second
+
+console.log("[Skip-O-Matic] Extension active.");
